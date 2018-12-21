@@ -1,0 +1,66 @@
+package com.example.music.utils;
+import android.content.Context;
+import android.database.Cursor;
+import android.provider.MediaStore;
+import com.example.music.model.Song;
+
+import java.util.ArrayList;
+import java.util.List;
+public class MusicUtils {
+    /**
+     * 扫描系统里面的音频文件，返回一个list集合
+     */
+    public static List<Song> getMusicData(Context context) {
+        List<Song> list = new ArrayList<Song>();
+        // 媒体库查询语句（写一个工具类MusicUtils）
+        Cursor cursor = context.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,//(内部)INTERNAL_CONTENT_URI,//(外部)
+                new String[]{
+                        MediaStore.Audio.Media._ID,    //写入我想要获得的信息（列）
+                        MediaStore.Audio.Media.TITLE,
+                        MediaStore.Audio.Media.DURATION,
+                        MediaStore.Audio.Media.ARTIST,
+                        MediaStore.Audio.Media._ID,
+                        MediaStore.Audio.Media.DISPLAY_NAME,
+                        MediaStore.Audio.Media.ALBUM,
+                        MediaStore.Audio.Media.DATA,
+                        MediaStore.Audio.Media.SIZE,
+                        MediaStore.Audio.Media.ALBUM_ID
+                }, null, null, null);
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                Song song = new Song();
+                song.song = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
+                song.singer = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));
+                song.path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+                song.duration = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION));
+                song.size = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE));
+                if (song.size > 1000 * 800) {
+                    // 注释部分是切割标题，分离出歌曲名和歌手 （本地媒体库读取的歌曲信息不规范）
+                    if (song.song.contains("-")) {
+                        String[] str = song.song.split("-");
+                        song.singer = str[0];
+                        song.song = str[1];
+                    }
+                    list.add(song);
+                }
+            }
+            // 释放资源
+            cursor.close();
+        }
+
+        return list;
+    }
+
+    /**
+     * 定义一个方法用来格式化获取到的时间
+     */
+    public static String formatTime(int time) {
+        if (time / 1000 % 60 < 10) {
+            return time / 1000 / 60 + ":0" + time / 1000 % 60;
+
+        } else {
+            return time / 1000 / 60 + ":" + time / 1000 % 60;
+        }
+
+    }
+}
